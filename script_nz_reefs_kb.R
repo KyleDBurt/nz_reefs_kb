@@ -21,7 +21,7 @@ ui <- fluidPage(
     mainPanel(
       tabsetPanel(
         tabPanel("Project Overview",
-                 uiOutput("image_output"),
+                 imageOutput("image_output"),
                  textOutput("tab1_description")
         ),
         tabPanel("Tab 2", "Output for Tab 2")
@@ -36,10 +36,11 @@ ui <- fluidPage(
 ### Create server function
 
 server <- function(input, output) {
-  output$image_output <- renderUI({
-    tags$img(src = "visual_elements/lyttelton_harbour_twilight.jpg", 
+  output$image_output <- renderImage({
+    list(src = "www/lyttelton_harbour_twilight.jpg",
+         contentType = "image/jpg",
              width = "100%", height = "auto")
-  })
+  }, deleteFile = FALSE)
   
   output$tab1_description <- renderText({
     # Description text for Tab 1
