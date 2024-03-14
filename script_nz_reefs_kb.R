@@ -12,6 +12,7 @@ library(tidyr)
 library(leaflet)
 library(sf)
 library(dplyr)
+library(knitr)
 
 ### Original dataset from excel
 cawthron_groups <- read_excel(here("data/updated_cawthron_data.xlsx"), 
@@ -242,10 +243,10 @@ server <- function(input, output) {
   output$date_table <- renderTable({
     selected_date <- input$survey_dates_tab3
     
-    # Filter data based on selected survey date
+    ### Filter data based on selected survey date
     filtered_dates <- filter(original_groups_weather, month_year == selected_date)
     
-    # Group by site and aggregate data
+    ### Group by site and aggregate data
     aggregated_data <- filtered_dates |>
       group_by(site) |>
       summarize(
@@ -284,15 +285,21 @@ server <- function(input, output) {
         survey_sst = first(sst)
       )
     
-    # Select columns to display in the final table
+    ### Select columns to display in the final table
     final_table <- aggregated_data |>
       select(-survey_site, -survey_date, -survey_season, -survey_rep, 
-             -survey_month_year, -survey_longitude, -survey_latitude, -survey_time)
-    
+             -survey_month_year, -survey_longitude, -survey_latitude, -survey_time) |>
+      t()
+    rownames(final_table) <- colnames(aggregated_data |>
+                                        select(-survey_site, -survey_date, -survey_season, 
+                                               -survey_rep, 
+                                               -survey_month_year, -survey_longitude, 
+                                               -survey_latitude, -survey_time))
+    # browser()
     
     # Print summary of filtered data
     return(final_table)
-  })
+  }, rownames = TRUE)
 
   # Tab 4
   ### Reactive expression to filter data based on user selection
@@ -307,14 +314,13 @@ server <- function(input, output) {
   
   ### Reactive expression to create linear model based on user selection
   lm_model <- reactive({
-    # browser()
     ### Extracting selected dependent variable
     dependent_variable <- input$model_options
-    
-    ### Creating linear model with filtered data
-    #lm(formula(paste(dependent_variable, "~ undaria_percent")), data = filtered_lm_data())
     # browser()
-    lm({{dependent_variable}} ~ undaria_percent, data = filtered_lm_data())
+    ### Creating linear model with filtered data
+    lm(as.formula(paste(dependent_variable, "~ undaria_percent")), data = filtered_lm_data())
+    
+    # lm({{dependent_variable}} ~ undaria_percent, data = filtered_lm_data())
   })
   
   ### Render plot with graph
@@ -328,9 +334,10 @@ server <- function(input, output) {
   ### Render summary table
   output$lm_table <- renderTable({
     # browser()
+    model <- lm_model()
+    # browser()
     lm_table <- summary(lm_model())
-    as.data.frame(lm_table) |>
-    kable()
+    lm_table$coefficients
   })
   
   # Tab 5
