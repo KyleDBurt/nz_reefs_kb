@@ -211,7 +211,7 @@ server <- function(input, output) {
     Zealand's South Island. The focus of the surveys was invasive Undaria 
     and other aquatic organisms. This app will analyze temporal, spatial,
     and ecological patterns observed in the surveys with a specific focus
-    on the impact of invasive Undaria."
+    on the impact of invasive Undaria. (by Kyle Burt)"
   })
   
   # Tab 2
