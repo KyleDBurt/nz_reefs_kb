@@ -42,7 +42,6 @@ groups_long <- cawthron_groups |>
 ### Add a column to join groups_long with weather data
 groups_long <- groups_long |>
   mutate(month_year = case_when(
-    date == "2013" & season == "Autumn" ~ "may_2013",
     date == "2013" & season == "Spring" ~ "november_2013",
     date == "2014" & season == "Autumn" ~ "may_2014",
     date == "2014" & season == "Spring" ~ "october_2014",
@@ -50,9 +49,13 @@ groups_long <- groups_long |>
     date == "2019" & season == "Autumn" ~ "may_2019",
     date == "2019" & season == "Spring" ~ "october_2019",
     TRUE ~ NA_character_  # For other cases, set it as NA
-  ))
-  
+  )) |>
+  mutate(month_year = factor(month_year, 
+                             levels = c("november_2013", "may_2014",
+                                        "october_2014", "february_2015", 
+                                        "may_2019", "october_2019")))
 
+  
 ### Load weather data
 load("data/lyttelton_weather.RData")
 
@@ -167,19 +170,19 @@ ui <- fluidPage(
     tabPanel("Animals Observed",
              sidebarPanel(
                "Animals Observed Sidebar",
-               radioButtons("animals_observed", "Select Animal:",
-                            choices = c("Crustacean herbivores", 
-                                        "Crustacean predators", 
-                                        "Echinoderm predators", 
-                                        "Solitary bivalves",
-                                        "Solitary anemones",
-                                        "Barnacles and worms",
-                                        "Colonial filter feeders",
-                                        "Molluscan herbivores",
-                                        "Molluscan predators"))
+               checkboxGroupInput("animals_observed", "Select Animal:",
+                            choices = c("Crustacean herbivores" = "crustacean_herbivore_count", 
+                                        "Crustacean predators" = "crustacean_predator_count", 
+                                        "Echinoderm predators" = "echinoderm_predator_count", 
+                                        "Solitary bivalves" = "percent_solitary_bivalves",
+                                        "Solitary anemones" = "percent_solitary_anemones",
+                                        "Barnacles and worms" = "percent_barnacles_worms",
+                                        "Colonial filter feeders" = "percent_colonial_FilterFeeders",
+                                        "Molluscan herbivores" = "percent_molluscan_herbivores",
+                                        "Molluscan predators" = "percent_molluscan_predators"))
              ),
              mainPanel(
-               tableOutput("animal_table")
+               plotOutput("animal_plot")
              )
     )
   ),
@@ -388,22 +391,58 @@ server <- function(input, output) {
     # browser()
     lm_table <- summary(lm_model())
     lm_table$coefficients
-  })
+  }, rownames = TRUE)
   
   # Tab 5
-  ### Reactive expression to filter data based on selected animal
-  filtered_animal_data <- reactive({
-    animal <- switch(input$animals_observed,
-                     "Crustacean herbivores" = "crustacean_herbivore_count",
-                     "Crustacean predators" = "crustacean_predator_count",
-                     "Echinoderm predators" = "echinoderm_predator_count"
-    )
-  })
+  # filtered_animal_data <- reactive({
+  #   filtered_animals <- groups_long |>
+  #     filter(variable %in% c("crustacean_herbivore_count", 
+  #                            "crustacean_predator_count", 
+  #                            "echinoderm_predator_count", 
+  #                            "percent_solitary_bivalves",
+  #                            "percent_solitary_anemones",
+  #                            "percent_barnacles_worms",
+  #                            "percent_colonial_FilterFeeders",
+  #                            "percent_molluscan_herbivores",
+  #                            "percent_molluscan_predators")) |>
+  #     pivot_wider(names_from = variable, values_from = count_percent, 
+  #                 values_fill = list(month_year =
+  #                                      unique(groups_long$month_year))) |>
+  #     group_by(month_year) |> summarize(across(c(crustacean_herbivore_count,
+  #                                                crustacean_predator_count,
+  #                                                echinoderm_predator_count),
+  #                                              sum), across(c(site, date, 
+  #                                                             season, rep,
+  #                                                             month_year),
+  #                                                           first),
+  #                                       across(c(percent_solitary_bivalves,
+  #                                                percent_solitary_anemones,
+  #                                                percent_barnacles_worms,
+  #                                                percent_colonial_FilterFeeders,
+  #                                                percent_molluscan_herbivores,
+  #                                                percent_molluscan_predators),
+  #                                              mean))
+  #   
+  #   
+  #   return(filtered_animals)
+    
+  # })
   
-  ### Render summary table for selected animal
-  output$animal_table <- renderTable({
-    filtered_animal_data()
-  }) 
+
+  
+  output$animal_plot <- renderPlot({
+    ### Animal plot
+    animal_plot_df <- groups_long |> 
+      filter(variable %in% input$animals_observed) |>
+      group_by(month_year, variable) |>
+      summarise(avg_count_percent = mean(count_percent))
+    # browser()
+    ggplot(animal_plot_df,
+           aes(x = month_year, y = avg_count_percent, color = variable)) + 
+      geom_point(size = 5) + 
+      labs(x = "Time") +
+      theme_bw()
+  })
   
 }
 
