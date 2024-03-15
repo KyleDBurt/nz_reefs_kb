@@ -135,7 +135,7 @@ ui <- fluidPage(
              sidebarPanel(
                "Survey Dates Sidebar",
                selectInput("survey_dates_tab3", "Select Survey Date:",
-                           choices = c("May 2013" = "may_2013", 
+                           choices = c(
                                        "November 2013" = "november_2013", 
                                        "May 2014" = "may_2014", 
                                        "October 2014" = "october_2014", 
@@ -229,15 +229,65 @@ server <- function(input, output) {
   })
   
   ### Render summary table based on selected point
-  ### missing radiotab2
   output$map_table <- renderTable({
     ### Check if a point is selected
     {
       ### If a point is selected, filter the data and return summary
-      filtered_data <- filter(groups_long, input$radio_tab2 == site)
-      return(filtered_data)
-    } 
-  })
+      filtered_map_data <- filter(original_groups_weather, input$radio_tab2 == site)
+      
+      ### group by month_year and aggregate
+      aggregated_MY_data <- filtered_map_data |>
+        group_by(month_year) |>
+        summarize(
+          survey_site = first(site),
+          survey_date = first(date),
+          survey_season = first(season),
+          survey_rep = first(rep),
+          undaria_avg = mean(undaria_percent),
+          undaria_adults_avg = mean(undaria_adults),
+          undaria_juveniles_avg = mean(undaria_juveniles),
+          undaria_recruits_avg = mean(undaria_recruits),
+          new_sum_undaria = sum(sum_undaria_AdultsJuveniles),
+          fucoids_kelps_avg = mean(percent_fucoids_kelps),
+          solitary_bivalves_avg = mean(percent_solitary_bivalves),
+          solitary_anemones_avg = mean(percent_solitary_anemones),
+          barnacles_worms_avg = mean(percent_barnacles_worms),
+          FilterFeeders_avg = mean(percent_colonial_FilterFeeders),
+          reds_avg = mean(percent_reds),
+          greens_avg = mean(percent_greens),
+          browns_avg = mean(percent_browns),
+          algal_crusts_avg = mean(percent_algal_crusts),
+          red_blades_avg = mean(percent_red_blades),
+          green_blades_avg = mean(percent_green_blades),
+          molluscan_herbivores_avg = mean(percent_molluscan_herbivores),
+          sum_crustacean_herbivores = sum(crustacean_herbivore_count),
+          molluscan_predators_avg = mean(percent_molluscan_predators),
+          sum_crustacean_predators = sum(crustacean_predator_count),
+          sum_echninoderm_predators = sum(echinoderm_predator_count),
+          coralline_turf_avg = mean(percent_coralline_turf),
+          paint_avg = mean(percent_paint),
+          bare_space_avg = mean(percent_bare_space),
+          survey_month_year = first(month_year),
+          survey_longitude = first(longitude),
+          survey_latitude = first(latitude),
+          survey_time = first(time),
+          survey_sst = first(sst)
+        )
+      
+      ### Select columns to display in the final table
+      final_map_table <- aggregated_MY_data |>
+        select(-survey_site, -survey_date, -survey_season, -survey_rep, 
+                -survey_month_year, -survey_longitude, -survey_latitude, -survey_time) |>
+        t()
+      rownames(final_map_table) <-  colnames(aggregated_MY_data |>
+                                               select(-survey_site, -survey_date, -survey_season, 
+                                                      -survey_rep, 
+                                                      -survey_month_year, -survey_longitude, 
+                                                      -survey_latitude, -survey_time)) 
+      
+      return(final_map_table)
+    }
+  }, rownames = TRUE)
   
   # Tab 3
   output$date_table <- renderTable({
@@ -286,11 +336,11 @@ server <- function(input, output) {
       )
     
     ### Select columns to display in the final table
-    final_table <- aggregated_data |>
+    final_date_table <- aggregated_data |>
       select(-survey_site, -survey_date, -survey_season, -survey_rep, 
              -survey_month_year, -survey_longitude, -survey_latitude, -survey_time) |>
       t()
-    rownames(final_table) <- colnames(aggregated_data |>
+    rownames(final_date_table) <- colnames(aggregated_data |>
                                         select(-survey_site, -survey_date, -survey_season, 
                                                -survey_rep, 
                                                -survey_month_year, -survey_longitude, 
@@ -298,7 +348,7 @@ server <- function(input, output) {
     # browser()
     
     # Print summary of filtered data
-    return(final_table)
+    return(final_date_table)
   }, rownames = TRUE)
 
   # Tab 4
