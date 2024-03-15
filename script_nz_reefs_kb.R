@@ -136,7 +136,6 @@ ui <- fluidPage(
     ### Tab 3
     tabPanel("Survey Dates",
              sidebarPanel(
-               "Survey Dates Sidebar",
                selectInput("survey_dates_tab3", "Select Survey Date:",
                            choices = c(
                                        "November 2013" = "november_2013", 
@@ -154,8 +153,7 @@ ui <- fluidPage(
     ### Tab 4
     tabPanel("Linear Regressions",
              sidebarPanel(
-               "Model Settings",
-               selectInput("model_options", "Select Model Option:",
+               selectInput("model_options", "Undaria Percent Cover vs",
                            choices = c("Fucoids and Kelps" = "percent_fucoids_kelps", 
                                        "Coralline Turfs" = "percent_coralline_turf", 
                                        "Paints" = "percent_paint"))
@@ -169,8 +167,7 @@ ui <- fluidPage(
     ### Tab 5
     tabPanel("Animals Observed",
              sidebarPanel(
-               "Animals Observed Sidebar",
-               checkboxGroupInput("animals_observed", "Select Animal:",
+               checkboxGroupInput("animals_observed", "Select Animal Group:",
                             choices = c("Crustacean herbivores" = "crustacean_herbivore_count", 
                                         "Crustacean predators" = "crustacean_predator_count", 
                                         "Echinoderm predators" = "echinoderm_predator_count", 
