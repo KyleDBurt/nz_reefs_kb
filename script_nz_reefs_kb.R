@@ -184,6 +184,13 @@ ui <- fluidPage(
     )
   ),
   
+  ### Tab 6
+  tabPanel("Citations",
+           mainPanel(
+             textOutput("tab6_citations")
+           )
+  ), 
+  
   # Customizing the theme
   theme = shinythemes::shinytheme("slate")
 )
@@ -192,7 +199,7 @@ ui <- fluidPage(
 # Create server function
 
 server <- function(input, output) {
-  ### Write out desired output
+  
   # Tab 1
   ### Tab 1 image
   output$image_output <- renderImage({
@@ -212,15 +219,6 @@ server <- function(input, output) {
   })
   
   # Tab 2
-  ### Reactive value to store selected point
-  # selected_point <- reactiveVal(NULL)
-  
-  ### Observer for leaflet map click events
-  # observe({
-    # click <- input$survey_map_click
-    # selected_point(if (!is.null(click)) click$lng else NULL) # Update selected point
-  # })
-  
   ### Render Leaflet map
   output$survey_map <- renderLeaflet({
     leaflet() |>
@@ -345,7 +343,6 @@ server <- function(input, output) {
                                                -survey_rep, 
                                                -survey_month_year, -survey_longitude, 
                                                -survey_latitude, -survey_time))
-    # browser()
     
     # Print summary of filtered data
     return(final_date_table)
@@ -360,13 +357,12 @@ server <- function(input, output) {
       pivot_wider(names_from = variable, values_from = count_percent)
     return(filtered_lm)
   })
-  # browser()
   
   ### Reactive expression to create linear model based on user selection
   lm_model <- reactive({
     ### Extracting selected dependent variable
     dependent_variable <- input$model_options
-    # browser()
+    
     ### Creating linear model with filtered data
     lm(as.formula(paste(dependent_variable, "~ undaria_percent")), data = filtered_lm_data())
     
@@ -375,7 +371,7 @@ server <- function(input, output) {
   
   ### Render plot with graph
   output$undaria_plot <- renderPlot({
-    # browser()
+    
     ### plotting the data, fill in with reactive
     ggplot(data = filtered_lm_data(), aes(x = undaria_percent, y = !!as.symbol(input$model_options))) + 
     geom_point(size = 1) + geom_smooth(method = lm, se = TRUE)
@@ -383,62 +379,39 @@ server <- function(input, output) {
   
   ### Render summary table
   output$lm_table <- renderTable({
-    # browser()
     model <- lm_model()
-    # browser()
     lm_table <- summary(lm_model())
     lm_table$coefficients
   }, rownames = TRUE)
   
   # Tab 5
-  # filtered_animal_data <- reactive({
-  #   filtered_animals <- groups_long |>
-  #     filter(variable %in% c("crustacean_herbivore_count", 
-  #                            "crustacean_predator_count", 
-  #                            "echinoderm_predator_count", 
-  #                            "percent_solitary_bivalves",
-  #                            "percent_solitary_anemones",
-  #                            "percent_barnacles_worms",
-  #                            "percent_colonial_FilterFeeders",
-  #                            "percent_molluscan_herbivores",
-  #                            "percent_molluscan_predators")) |>
-  #     pivot_wider(names_from = variable, values_from = count_percent, 
-  #                 values_fill = list(month_year =
-  #                                      unique(groups_long$month_year))) |>
-  #     group_by(month_year) |> summarize(across(c(crustacean_herbivore_count,
-  #                                                crustacean_predator_count,
-  #                                                echinoderm_predator_count),
-  #                                              sum), across(c(site, date, 
-  #                                                             season, rep,
-  #                                                             month_year),
-  #                                                           first),
-  #                                       across(c(percent_solitary_bivalves,
-  #                                                percent_solitary_anemones,
-  #                                                percent_barnacles_worms,
-  #                                                percent_colonial_FilterFeeders,
-  #                                                percent_molluscan_herbivores,
-  #                                                percent_molluscan_predators),
-  #                                              mean))
-  #   
-  #   
-  #   return(filtered_animals)
-    
-  # })
-  
-
-  
   output$animal_plot <- renderPlot({
     ### Animal plot
     animal_plot_df <- groups_long |> 
       filter(variable %in% input$animals_observed) |>
       group_by(month_year, variable) |>
       summarise(avg_count_percent = mean(count_percent))
-    # browser()
+
     ggplot(animal_plot_df,
            aes(x = month_year, y = avg_count_percent, color = variable)) + 
       geom_point(size = 5) + 
       labs(x = "Time") +
       theme_bw()
+  })
+  
+  # Tab 6 text
+  output$tab6_citations <- renderText({
+    "Citations <br><br>
+    
+    1. Dunne, J. (2023, January 25). Lyttelton by sea - and Via Tunnel. 
+          FLT Travel Blog. https://www.firstlighttravel.com/blog/lyttleton-by-sea-and-tunnel <br><br>
+    
+    2. National Oceanic and Atmospheric Administration. (n.d.). Erddap. 
+          ERDDAP - Home Page. https://coastwatch.pfeg.noaa.gov/erddap/index.html <br><br>
+    
+    3. South, P. (2019, October 31). Reef Surveys of Lyttelton Harbour, NZ. Nelson; 
+          Cawthron Institute. 
+    "
   })
   
 }
